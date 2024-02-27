@@ -58,6 +58,7 @@ let searchedList=[]
 let popData=[], latestData=[], randomData=[]
 let koMovieList=[], enMovieList =[]
 let newsList =[]
+let query = null
 
 let totalResults =0 
 let page =1
@@ -71,13 +72,15 @@ const news = document.querySelector('.news')
 const input = document.querySelector('input')
 
 async function getMovies(query){
-  if (query.keyword == null){
+  if (query == null){
+    console.log('여기 실행 중... :' )
     url = `https://api.themoviedb.org/3/movie/popular?api_key=${API_KEY}`
-  } else if (query.keyword != null && query.keyword != 'detail'){
-    url =`https://api.themoviedb.org/3/search/movie?query=${query.keyword}&api_key=${API_KEY}`
+  } else if (isNaN(query)){ // 순수문자열일 경우
+    url =`https://api.themoviedb.org/3/search/movie?query=${query}&api_key=${API_KEY}`
 
-  } else if(query.keyword == 'detail'){
-    url = `https://api.themoviedb.org/3/movie/${query.movieId}?api_key=${API_KEY}`
+  } else if(!isNaN(query)){  // 숫자형 문자열인 경우
+    // movieId로 해당 무비를 상세검색하는 경우 -- 사용할 일이 없을 듯.
+    url = `https://api.themoviedb.org/3/movie/${query}?api_key=${API_KEY}`
   } else{
     return;
   }
@@ -103,12 +106,17 @@ async function getMovies(query){
   }
 }
 
-async function getGlobalMovies(nation){
-  let country = nation;
-  url = url = `https://api.themoviedb.org/3/movie/popular?api_key=${API_KEY}`
+async function search(){
+  const q = input.value;
+  await getMovies(q)
+  render();
+}
+
+
+async function getCountryMovies(nation){
+  url = url = `https://api.themoviedb.org/3/movie/popular?&page=2&api_key=${API_KEY}`
   const movieUrl = new URL(url);
-  movieUrl.searchParams.set('page', page)
-  movieUrl.searchParams.set('pageSize', pageSize)
+  movieUrl.searchParams.set('language', nation)
   let tempList =[];
   try{
     const response = await fetch(movieUrl);
@@ -125,12 +133,20 @@ async function getGlobalMovies(nation){
     console.log(e.message);
     errorRender(e.message)
   }
+  movie2List = tempList.slice(0,12)
+  console.log('movie2List :',movie2List )
 
-  if(country =='ko'){   // original_language ='ko'
-    movie2List = tempList.filter(movie => movie.original_language == 'ko')
-  } else{
-    movie2List = tempList.filter(movie => movie.original_language != 'ko')
-  }
+  // if (country == 'ko') {
+  //   movie2List = tempList.filter(movie => /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(movie.title));
+  // } else {
+  //   movie2List = tempList.filter(movie => !/[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(movie.title));
+  // }
+
+  // if(country =='ko'){   // original_language ='ko'
+  //   movie2List = tempList.filter(movie => movie.original_language == 'ko')
+  // } else{
+  //   movie2List = tempList.filter(movie => movie.original_language != 'ko')
+  // }
 }
 
 //! 실행 코드 
@@ -139,11 +155,11 @@ init()
 
 
 
-function init(){
+async function init(){
   // 받은 데이터가 너무 많아서 우선 12개로만 한다.
-  getMovies() 
-  //!한국영화 데이터받기
-  getGlobalMovies('ko')  // 'en' 
+  await getMovies()   // await해야 render()전에 데이터가 완벽히 받아진다.
+  //외국영화 데이터받기
+  await getCountryMovies('ko')  // 'ko' 
   //!뉴스데이터 받기
   newsList = newsData 
   
@@ -163,7 +179,7 @@ function render(){
      let movie1HTML = movie1List.map( movie =>{ 
           const image = `https://image.tmdb.org/t/p/w500/${movie.poster_path}`;
           return `
-          <div class="card" style="width: 10rem;">
+          <div class="card" style="width: 13rem;">
               <img src="${image}" class="card-img-top" alt="...">
               <div class="card-body">
                   <p class="card-text">${movie.title}</p>
@@ -178,7 +194,7 @@ function render(){
       let movie2HTML = movie2List.map( movie =>{
           const image = `https://image.tmdb.org/t/p/w500/${movie.poster_path}`;
           return `
-          <div class="card" style="width: 10rem;">
+          <div class="card" style="width: 13rem;">
               <img src="${image}" class="card-img-top" alt="...">
               <div class="card-body">
                   <p class="card-text">${movie.title}</p>
