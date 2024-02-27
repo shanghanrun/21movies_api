@@ -111,7 +111,10 @@ async function search(){
   await getMovies(q)
   render();
 }
-
+async function getNationalMovies(nation){
+  await getCountryMovies(nation);
+  render();
+}
 
 async function getCountryMovies(nation){
   url = url = `https://api.themoviedb.org/3/movie/popular?&page=2&api_key=${API_KEY}`
@@ -169,8 +172,7 @@ async function init(){
 
 
 
-function render(){   
-  console.log('map 이전 movie1List :', movie1List )
+function render(){ 
    //movie1 화면그리기
    movie1.innerHTML='';
    if(movie1List.length==0){
